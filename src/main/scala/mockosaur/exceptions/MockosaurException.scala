@@ -1,0 +1,8 @@
+package mockosaur.exceptions
+
+import mockosaur.model.FunctionCall
+
+class MockosaurException extends RuntimeException
+
+case class MockosaurUnexpectedFunctionCallException(called: FunctionCall) extends MockosaurException
+case class MockosaurIncompleteCallSpecException() extends MockosaurException

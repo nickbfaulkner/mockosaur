@@ -1,39 +1,40 @@
 
 import java.lang.reflect.Method
-import net.sf.cglib.proxy._
-import org.objenesis._
+
+import mockosaur.exceptions.MockosaurException
+import mockosaur.impl.{MockBuilder, MockFunctionHandler, MockState}
+import mockosaur.model.{FunctionArg, FunctionCall, FunctionReturnValue, Mock}
+
 import scala.reflect.ClassTag
 
 package object mockosaur {
 
-  def mock[T](implicit tag: ClassTag[T]): T = {
+  def mock[T <: AnyRef](implicit tag: ClassTag[T]): T = {
 
-    createProxiedMock(tag.runtimeClass.asInstanceOf[Class[T]], new InvocationHandler {
-      override def invoke(proxy: Any, method: Method, args: Array[AnyRef]): AnyRef = {
-        println("==============================")
-        println(s"invoked $proxy   $method   $args")
-        println("==============================")
-        null
+    MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
+      override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
+        println("============================")
+        println(method)
+        println(args)
+        println("============================")
+        MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArg.apply))) match {
+          case Left(e: MockosaurException) => throw e
+          case Right(result) => result.value.asInstanceOf[AnyRef]
+        }
       }
     })
   }
 
-  def createProxiedMock[T](target: Class[T], invocationHandler: InvocationHandler): T = {
-    val interceptor = new MethodInterceptor() {
-      override def intercept(obj: scala.Any, method: Method, args: Array[AnyRef], proxy: MethodProxy): AnyRef = {
-        invocationHandler.invoke(obj, method, args)
-      }
-    }
-
-    val enhancer = new Enhancer()
-    enhancer.setSuperclass(target)
-    enhancer.setCallbackType(interceptor.getClass)
-    val proxiedClass = enhancer.createClass()
-    Enhancer.registerCallbacks(proxiedClass, Array(interceptor))
-    enhancer.setClassLoader(getClass.getClassLoader)
-
-    val objenesis = new ObjenesisStd()
-    val instantiator = objenesis.getInstantiatorOf(proxiedClass)
-    instantiator.newInstance().asInstanceOf[T]
+  def calling[T <: AnyRef](mock: T): T = {
+    MockState.recordingCall(Mock(mock))
+    mock
   }
+
+  implicit class MockCallResultAnyRefReturning[T](val ref: T) extends AnyVal {
+    def returning(toReturn: T): T = {
+      MockState.recordingReturn(FunctionReturnValue(toReturn.asInstanceOf[AnyRef]))
+      toReturn
+    }
+  }
+
 }
