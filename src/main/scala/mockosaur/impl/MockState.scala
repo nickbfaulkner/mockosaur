@@ -1,6 +1,6 @@
 package mockosaur.impl
 
-import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions.{MockosaurRecordAlreadyOngoingException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyCompleteException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockState.ExpectedFunctionCall.{Complete, PreReturnValueSpecification}
 import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 
@@ -22,7 +22,6 @@ object MockState {
       def complete(returnValue: FunctionReturnValue) = Complete(call, returnValue)
     }
   }
-
 
   private val globalState: mutable.Map[Mock, IndividualMockState] =
     mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
@@ -53,16 +52,16 @@ object MockState {
   }
 
   def recordingCall(mock: Mock): Unit = globalState.synchronized {
-    globalState.update(mock, globalState(mock).copy(isRecording = true))
+    findRecordingMock() match {
+      case Some(existing) => throw MockosaurRecordAlreadyOngoingException()
+      case None => globalState.update(mock, globalState(mock).copy(isRecording = true))
+    }
   }
 
   def recordingReturn(toReturn: FunctionReturnValue): Unit = globalState.synchronized {
-    val ongoingMock: Option[(Mock, IndividualMockState)] =
-      globalState find { case (_, state) => state.isRecording }
-
-    ongoingMock match {
+    findRecordingMock() match {
       case Some((mock, state)) => state.expectations.last match {
-        case _: ExpectedFunctionCall.Complete => ??? // todo
+        case _: ExpectedFunctionCall.Complete => throw MockosaurRecordAlreadyCompleteException()
         case spec: ExpectedFunctionCall.PreReturnValueSpecification =>
           val completedExpectations = state.expectations.dropRight(1) :+ spec.complete(toReturn)
           globalState.update(mock, state.copy(expectations = completedExpectations))
@@ -75,4 +74,7 @@ object MockState {
     globalState(mock).expectations.find(_.call == call)
   }
 
+  private def findRecordingMock(): Option[(Mock, IndividualMockState)] = {
+    globalState find { case (_, state) => state.isRecording }
+  }
 }

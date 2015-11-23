@@ -1,6 +1,6 @@
 package mockosaur
 
-import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions.{MockosaurRecordAlreadyOngoingException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyCompleteException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockState
 
 class MockInvocationTest extends MockosaurTest {
@@ -17,7 +17,6 @@ class MockInvocationTest extends MockosaurTest {
     }
 
     "throw an exception if an unexpected function is called - no args param unit return type" in new Scope {
-
       val theMock = mock[TheTestClass]
 
       val thrown = intercept[MockosaurUnexpectedFunctionCallException] {
@@ -29,7 +28,6 @@ class MockInvocationTest extends MockosaurTest {
     }
 
     "return unit if expected to do so - no args param unit return type" in new Scope {
-
       val theMock = mock[TheTestClass]
 
       calling(theMock).theFunc().returning(())
@@ -45,13 +43,41 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "throw an exception if a return value is called when mock record is already complete" in pending
-    "throw an exception if a mocked call is incomplete - calling only" in pending
-    "throw an exception if a mocked call is incomplete - calling and function call specified" in pending
-    "throw an exception if multiple mocks are recording" in pending
-    "throw an exception if a mock is recording multiple times" in pending
+    "throw an exception if a return value is called when mock record is already complete" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurRecordAlreadyCompleteException] {
+        calling(theMock).theFunc().returning(1).returning(2)
+      }
+    }
+
+    "throw an exception if multiple mocks are recording" in new Scope {
+      val theMock1 = mock[TheTestClass]
+      val theMock2 = mock[TheTestClass]
+
+      calling(theMock1)
+
+      intercept[MockosaurRecordAlreadyOngoingException] {
+        calling(theMock2)
+      }
+    }
+
+    "throw an exception if a mock is recording multiple times" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock)
+
+      intercept[MockosaurRecordAlreadyOngoingException] {
+        calling(theMock)
+      }
+    }
+
+    "throw an exception if a mocked call is not used" in pending
+    "throw an exception if a call is unexpected" in pending
+
+    "return values" in pending
     "multiple calls" in pending
-    "matches implicit" in pending
+    "implicits" in pending
 
   }
 }
