@@ -1,6 +1,6 @@
 package mockosaur.impl
 
-import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions.{MockosaurReturnsRequiredException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockExpectationsState.MockCallResult.{ContinueChain, Return, Unexpected}
 import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 
@@ -12,7 +12,9 @@ object MockState {
     val zombie = FunctionReturnValue(MockBuilder.buildZombie(call.function.getReturnType))
 
     if (MockRecordingState.isRecording(mock)) {
-      // todo - check if call matches one already in chain (MockosaurReturnsRequiredException)
+      if (MockExpectationsState.isCallRecordOngoing(mock, call)) {
+        throw MockosaurReturnsRequiredException()
+      }
       MockExpectationsState.appendRecordedCallForMock(mock, call)
       zombie
     } else {

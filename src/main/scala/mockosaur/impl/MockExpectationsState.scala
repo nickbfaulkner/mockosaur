@@ -31,6 +31,10 @@ private[mockosaur] object MockExpectationsState {
     globalState.update(mock, newState)
   }
 
+  def isCallRecordOngoing(mock: Mock, call: FunctionCall): Boolean = globalState.synchronized {
+    globalState(mock).inProgressRecording.headOption.contains(call)
+  }
+
   def appendActualCallForMock(mock: Mock, call: FunctionCall): MockCallResult = globalState.synchronized {
     val oldState = globalState(mock)
     val stateWithCall = oldState.copy(inProgressCallChain = oldState.inProgressCallChain :+ call)
