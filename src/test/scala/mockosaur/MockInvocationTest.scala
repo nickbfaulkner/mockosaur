@@ -11,6 +11,7 @@ class MockInvocationTest extends MockosaurTest {
     class TheTestClass {
       def theFunc(): Unit = ???
       def theNoArgStringFunc(): String = ???
+      def theNoParensStringFunc: String = ???
     }
 
     trait Scope {
@@ -42,6 +43,14 @@ class MockInvocationTest extends MockosaurTest {
       calling(theMock).theNoArgStringFunc().returns("Another String")
 
       theMock.theNoArgStringFunc() shouldBe "Another String"
+    }
+
+    "return value if expected to do so - no parens" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoParensStringFunc.returns("Another String")
+
+      theMock.theNoParensStringFunc shouldBe "Another String"
     }
 
     "throw an exception if a return value is called when no mock record is ongoing" in new Scope {
@@ -78,6 +87,17 @@ class MockInvocationTest extends MockosaurTest {
 
       intercept[MockosaurRecordAlreadyOngoingException] {
         calling(theMock)
+      }
+    }
+
+    "throw an exception if multiple mocks are recording at once" in new Scope {
+      val theMock1 = mock[TheTestClass]
+      val theMock2 = mock[TheTestClass]
+
+      calling(theMock1)
+
+      intercept[MockosaurRecordAlreadyOngoingException] {
+        calling(theMock2)
       }
     }
 
