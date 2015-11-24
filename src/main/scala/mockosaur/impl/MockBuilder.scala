@@ -11,7 +11,6 @@ object MockBuilder {
     val interceptor = new MethodInterceptor() {
       override def intercept(obj: AnyRef, method: Method, args: Array[AnyRef], proxy: MethodProxy): AnyRef = {
         if (method.getDeclaringClass == classOf[Object]) {
-          println("ignoring intercept")
           proxy.invokeSuper(obj, args)
         } else {
           handler.functionCall(obj.asInstanceOf[T], method, args)

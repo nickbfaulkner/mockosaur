@@ -9,7 +9,6 @@ import scala.reflect.ClassTag
 package object mockosaur {
 
   def mock[T <: AnyRef](implicit tag: ClassTag[T]): T = {
-
     MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
       override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
         println("============================")
@@ -20,6 +19,10 @@ package object mockosaur {
         result.value.asInstanceOf[AnyRef]
       }
     })
+  }
+
+  def mock[T <: AnyRef](obj: T)(implicit tag: ClassTag[T]): T = {
+    this.mock(tag)
   }
 
   def calling[T <: AnyRef](mock: T): T = {

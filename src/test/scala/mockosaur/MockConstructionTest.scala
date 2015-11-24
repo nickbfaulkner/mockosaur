@@ -33,5 +33,15 @@ class MockConstructionTest extends MockosaurTest {
       classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
+
+    "Mock objects" in {
+
+      object TheTestObject
+
+      val theMock = mock(TheTestObject)
+
+      TheTestObject.getClass.isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
   }
 }
