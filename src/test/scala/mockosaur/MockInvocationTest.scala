@@ -1,10 +1,10 @@
 package mockosaur
 
+import java.util.concurrent.atomic.AtomicInteger
 import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockState
 
 class MockInvocationTest extends MockosaurTest {
-
 
   "A Mockosaur mock should" - {
 
@@ -53,7 +53,12 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoParensStringFunc shouldBe "Another String"
     }
 
-    "throw an exception if a return value is called when no mock record is ongoing" in new Scope {
+    "verify all calls were made to a mock" in pending
+    "throw an exception if a mocked call is not used" in pending
+    "multiple calls" in pending
+    "implicits" in pending
+
+    "throw an exception if returns is called when no mock record is ongoing" in new Scope {
       val theMock = mock[TheTestClass]
 
       intercept[MockosaurNoOngoingRecordException] {
@@ -90,7 +95,7 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "throw an exception if multiple mocks are recording at once" in new Scope {
+    "throw an exception if multiple mocks are recording at once on the same thread" in new Scope {
       val theMock1 = mock[TheTestClass]
       val theMock2 = mock[TheTestClass]
 
@@ -101,10 +106,26 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "throw an exception if a mocked call is not used" in pending
-    "multiple calls" in pending
-    "no parens functions" in pending
-    "implicits" in pending
+    "work as expected if multiple mocks are recording at once on different threads" in new Scope {
+      val threadCount = 100
+      val complete = new AtomicInteger(0)
 
+      val threads = (1 to threadCount) map { _ =>
+        new Thread(new Runnable() {
+          override def run(): Unit = {
+            val theMock = mock[TheTestClass]
+            calling(theMock).theFunc().returns(())
+            theMock.theFunc() shouldBe ()
+            complete.incrementAndGet()
+          }
+        })
+      }
+
+      threads.foreach(_.start())
+      Thread.sleep(500)
+      threads.foreach(_.join())
+
+      complete.get() shouldBe threadCount
+    }
   }
 }

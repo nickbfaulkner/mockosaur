@@ -7,15 +7,17 @@ import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 import scala.collection.mutable
 
 object MockState {
+  import MockRecordingState._
 
-  case class IndividualMockState(isRecording: Boolean, expectations: Seq[ExpectedFunctionCall])
+  case class IndividualMockState(expectations: Seq[ExpectedFunctionCall])
   object IndividualMockState {
-    val zero = IndividualMockState(isRecording = false, expectations = Seq.empty)
+    val zero = IndividualMockState(expectations = Seq.empty)
   }
 
   sealed abstract class ExpectedFunctionCall {
     val call: FunctionCall
   }
+
   object ExpectedFunctionCall {
     case class Complete(call: FunctionCall, returnValue: FunctionReturnValue) extends ExpectedFunctionCall
     case class PreReturnValueSpecification(call: FunctionCall) extends ExpectedFunctionCall {
@@ -26,9 +28,10 @@ object MockState {
   private val globalState: mutable.Map[Mock, IndividualMockState] =
     mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
 
-  // todo - remove
+  // this is required because the tests explicitly leave mocks in a bad state
   private[mockosaur] def reset(): Unit = globalState.synchronized {
     globalState.clear()
+    stopRecording()
   }
 
   private[mockosaur] def printDebugString() = {
@@ -45,7 +48,7 @@ object MockState {
                           call: FunctionCall): FunctionReturnValue = globalState.synchronized {
     val state: IndividualMockState = globalState(mock)
 
-    if (state.isRecording) {
+    if (isRecording(mock)) {
       val newState = state.copy(expectations = state.expectations :+ ExpectedFunctionCall.PreReturnValueSpecification(call))
 
       globalState.update(mock, newState)
@@ -57,24 +60,25 @@ object MockState {
         case Some(expectedCall: PreReturnValueSpecification) => ??? // todo
         case None => throw MockosaurUnexpectedFunctionCallException(call)
       }
-
     }
   }
 
   def recordingCall(mock: Mock): Unit = globalState.synchronized {
-    findRecordingMock() match {
+    getRecordingMock() match {
       case Some(existing) => throw MockosaurRecordAlreadyOngoingException()
-      case None => globalState.update(mock, globalState(mock).copy(isRecording = true))
+      case None => startRecording(mock)
+                   globalState.update(mock, globalState(mock))
     }
   }
 
   def recordingReturn(toReturn: FunctionReturnValue): Unit = globalState.synchronized {
-    findRecordingMock() match {
+    getRecordingMock() map (m => m -> globalState(m)) match {
       case Some((mock, state)) => state.expectations.last match {
         case _: ExpectedFunctionCall.Complete => throw MockosaurNoOngoingRecordException()
         case spec: ExpectedFunctionCall.PreReturnValueSpecification =>
+          stopRecording()
           val completedExpectations = state.expectations.dropRight(1) :+ spec.complete(toReturn)
-          globalState.update(mock, state.copy(isRecording = false, expectations = completedExpectations))
+          globalState.update(mock, state.copy(expectations = completedExpectations))
       }
       case None => throw MockosaurNoOngoingRecordException()
     }
@@ -84,7 +88,4 @@ object MockState {
     globalState(mock).expectations.find(_.call == call)
   }
 
-  private def findRecordingMock(): Option[(Mock, IndividualMockState)] = {
-    globalState find { case (_, state) => state.isRecording }
-  }
 }
