@@ -1,7 +1,7 @@
 package mockosaur
 
 import java.util.concurrent.atomic.AtomicInteger
-import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions._
 import mockosaur.impl.MockState
 
 class MockInvocationTest extends MockosaurTest {
@@ -45,6 +45,8 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoArgStringFunc() shouldBe "Another String"
     }
 
+    "return value if expected to do so - with params" in pending
+
     "return value if expected to do so - no parens" in new Scope {
       val theMock = mock[TheTestClass]
 
@@ -53,8 +55,26 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoParensStringFunc shouldBe "Another String"
     }
 
-    "verify all calls were made to a mock" in pending
-    "throw an exception if a mocked call is not used" in pending
+    "verify all calls were made to a mock" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc().returns("Another String")
+
+      theMock.theNoArgStringFunc()
+
+      verifyAllCallsWereMade()
+    }
+//
+//    "throw an exception if a mocked call is not used" in new Scope {
+//      val theMock = mock[TheTestClass]
+//
+//      calling(theMock).theNoArgStringFunc().returns("Another String")
+//
+//      intercept[MockosaurUnmetExpectationException] {
+//        verifyAllCallsWereMade()
+//      }
+//    }
+
     "multiple calls" in pending
     "implicits" in pending
 
@@ -63,6 +83,16 @@ class MockInvocationTest extends MockosaurTest {
 
       intercept[MockosaurNoOngoingRecordException] {
         "a string".length.returns(9)
+      }
+    }
+
+    "throw an exception if returns is not called" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theFunc()
+
+      intercept[MockosaurReturnsRequiredException] {
+        theMock.theFunc()
       }
     }
 
@@ -107,7 +137,7 @@ class MockInvocationTest extends MockosaurTest {
     }
 
     "work as expected if multiple mocks are recording at once on different threads" in new Scope {
-      val threadCount = 100
+      val threadCount = 10
       val complete = new AtomicInteger(0)
 
       val threads = (1 to threadCount) map { _ =>

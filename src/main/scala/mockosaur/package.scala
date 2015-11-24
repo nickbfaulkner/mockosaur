@@ -23,7 +23,7 @@ package object mockosaur {
   }
 
   def calling[T <: AnyRef](mock: T): T = {
-    MockState.recordingCall(Mock(mock))
+    MockState.recordCalling(Mock(mock))
     mock
   }
 
@@ -34,4 +34,7 @@ package object mockosaur {
     }
   }
 
+  def verifyAllCallsWereMade(): Unit = {
+    ()
+  }
 }

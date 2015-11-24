@@ -6,7 +6,9 @@ class MockosaurException extends RuntimeException
 
 case class MockosaurUnexpectedFunctionCallException(called: FunctionCall) extends MockosaurException
 case class MockosaurIncompleteCallSpecException() extends MockosaurException
+case class MockosaurUnmetExpectationException() extends MockosaurException
 
 class MockosaurUsageException extends MockosaurException
 case class MockosaurNoOngoingRecordException() extends MockosaurUsageException
 case class MockosaurRecordAlreadyOngoingException() extends MockosaurUsageException
+case class MockosaurReturnsRequiredException() extends MockosaurUsageException
