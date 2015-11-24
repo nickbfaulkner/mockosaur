@@ -1,6 +1,6 @@
 package mockosaur
 
-import mockosaur.exceptions.{MockosaurRecordAlreadyOngoingException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyCompleteException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockState
 
 class MockInvocationTest extends MockosaurTest {
@@ -10,6 +10,7 @@ class MockInvocationTest extends MockosaurTest {
 
     class TheTestClass {
       def theFunc(): Unit = ???
+      def theNoArgStringFunc(): String = ???
     }
 
     trait Scope {
@@ -30,24 +31,32 @@ class MockInvocationTest extends MockosaurTest {
     "return unit if expected to do so - no args param unit return type" in new Scope {
       val theMock = mock[TheTestClass]
 
-      calling(theMock).theFunc().returning(())
+      calling(theMock).theFunc().returns(())
 
       theMock.theFunc() shouldBe ()
+    }
+
+    "return value if expected to do so - no args param" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc().returns("Another String")
+
+      theMock.theNoArgStringFunc() shouldBe "Another String"
     }
 
     "throw an exception if a return value is called when no mock record is ongoing" in new Scope {
       val theMock = mock[TheTestClass]
 
       intercept[MockosaurNoOngoingRecordException] {
-        "a string".length.returning(9)
+        "a string".length.returns(9)
       }
     }
 
     "throw an exception if a return value is called when mock record is already complete" in new Scope {
       val theMock = mock[TheTestClass]
 
-      intercept[MockosaurRecordAlreadyCompleteException] {
-        calling(theMock).theFunc().returning(1).returning(2)
+      intercept[MockosaurNoOngoingRecordException] {
+        calling(theMock).theFunc().returns(1).returns(2)
       }
     }
 
@@ -73,10 +82,8 @@ class MockInvocationTest extends MockosaurTest {
     }
 
     "throw an exception if a mocked call is not used" in pending
-    "throw an exception if a call is unexpected" in pending
-
-    "return values" in pending
     "multiple calls" in pending
+    "no parens functions" in pending
     "implicits" in pending
 
   }

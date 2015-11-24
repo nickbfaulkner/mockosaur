@@ -29,6 +29,16 @@ object MockBuilder {
     val instantiator = objenesis.getInstantiatorOf(proxiedClass)
     instantiator.newInstance().asInstanceOf[T]
   }
+
+  def buildZombie[T](target: Class[T]): T = {
+    if (target.isAssignableFrom(Void.TYPE)) {
+      ().asInstanceOf[T]
+    } else {
+      val objenesis = new ObjenesisStd()
+      val instantiator = objenesis.getInstantiatorOf(target)
+      instantiator.newInstance()
+    }
+  }
 }
 
 trait MockFunctionHandler[T] {

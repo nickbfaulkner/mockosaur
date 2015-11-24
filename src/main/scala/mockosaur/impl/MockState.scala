@@ -1,6 +1,6 @@
 package mockosaur.impl
 
-import mockosaur.exceptions.{MockosaurRecordAlreadyOngoingException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyCompleteException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions.{MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
 import mockosaur.impl.MockState.ExpectedFunctionCall.{Complete, PreReturnValueSpecification}
 import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 
@@ -26,8 +26,19 @@ object MockState {
   private val globalState: mutable.Map[Mock, IndividualMockState] =
     mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
 
+  // todo - remove
   private[mockosaur] def reset(): Unit = globalState.synchronized {
     globalState.clear()
+  }
+
+  private[mockosaur] def printDebugString() = {
+    println("=================================================")
+    println("= Mock State ====================================")
+    println("=================================================")
+    globalState.foreach { case (mock, state) =>
+        println(s"$mock - $state")
+    }
+    println("=================================================")
   }
 
   def processFunctionCall(mock: Mock,
@@ -39,8 +50,7 @@ object MockState {
 
       globalState.update(mock, newState)
 
-      // todo - return thing that can capture required return value
-      FunctionReturnValue()
+      FunctionReturnValue(MockBuilder.buildZombie(call.function.getReturnType))
     } else {
       findExpectedFunctionCall(mock, call) match {
         case Some(expectedCall: Complete) => expectedCall.returnValue
@@ -61,10 +71,10 @@ object MockState {
   def recordingReturn(toReturn: FunctionReturnValue): Unit = globalState.synchronized {
     findRecordingMock() match {
       case Some((mock, state)) => state.expectations.last match {
-        case _: ExpectedFunctionCall.Complete => throw MockosaurRecordAlreadyCompleteException()
+        case _: ExpectedFunctionCall.Complete => throw MockosaurNoOngoingRecordException()
         case spec: ExpectedFunctionCall.PreReturnValueSpecification =>
           val completedExpectations = state.expectations.dropRight(1) :+ spec.complete(toReturn)
-          globalState.update(mock, state.copy(expectations = completedExpectations))
+          globalState.update(mock, state.copy(isRecording = false, expectations = completedExpectations))
       }
       case None => throw MockosaurNoOngoingRecordException()
     }

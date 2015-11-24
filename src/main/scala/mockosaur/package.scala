@@ -11,10 +11,7 @@ package object mockosaur {
   def mock[T <: AnyRef](implicit tag: ClassTag[T]): T = {
     MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
       override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
-        println("============================")
-        println(method)
-        println(args)
-        println("============================")
+        println("--- Called " + method + " with args " + args)
         val result = MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArg.apply)))
         result.value.asInstanceOf[AnyRef]
       }
@@ -31,7 +28,7 @@ package object mockosaur {
   }
 
   implicit class MockCallResultAnyRefReturning[T](val ref: T) extends AnyVal {
-    def returning(toReturn: T): T = {
+    def returns(toReturn: T): T = {
       MockState.recordingReturn(FunctionReturnValue(toReturn.asInstanceOf[AnyRef]))
       toReturn
     }

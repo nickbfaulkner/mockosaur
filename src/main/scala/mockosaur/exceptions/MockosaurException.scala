@@ -9,5 +9,4 @@ case class MockosaurIncompleteCallSpecException() extends MockosaurException
 
 class MockosaurUsageException extends MockosaurException
 case class MockosaurNoOngoingRecordException() extends MockosaurUsageException
-case class MockosaurRecordAlreadyCompleteException() extends MockosaurUsageException
 case class MockosaurRecordAlreadyOngoingException() extends MockosaurUsageException
