@@ -4,6 +4,16 @@ class MockConstructionTest extends MockosaurTest {
 
   "Mockosaur should" - {
 
+    "Mock traits" in {
+
+      trait TheTestClass {}
+
+      val theMock = mock[TheTestClass]
+
+      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
     "Mock classes with default constructors" in {
 
       class TheTestClass {}
