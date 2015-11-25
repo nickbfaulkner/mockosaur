@@ -20,7 +20,8 @@ private[mockosaur] object MockExpectationsState {
   object MockCallResult {
     case class Return(functionReturnValue: FunctionReturnValue) extends MockCallResult
     case object ContinueChain extends MockCallResult
-    case object Unexpected extends MockCallResult
+    case object UnexpectedParams extends MockCallResult
+    case object UnexpectedCall extends MockCallResult
   }
 
   private def buildEmptyState() = mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
@@ -60,7 +61,14 @@ private[mockosaur] object MockExpectationsState {
         if (callsMatchStartOfCallChain) {
           MockCallResult.ContinueChain -> stateWithCall
         } else {
-          MockCallResult.Unexpected -> stateWithCall
+          val methodMatchStartOfCallChain = stateWithCall.pendingExpectations.exists(_.calls.map(_.function).startsWith(stateWithCall.inProgressCallChain.map(_.function)))
+          val rejectionType =
+            if (methodMatchStartOfCallChain) {
+              MockCallResult.UnexpectedParams
+            } else {
+              MockCallResult.UnexpectedCall
+            }
+          rejectionType -> stateWithCall
         }
 
     }): (MockCallResult, IndividualMockState)) match {

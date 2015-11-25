@@ -1,7 +1,7 @@
 package mockosaur.impl
 
 import mockosaur.exceptions._
-import mockosaur.impl.MockExpectationsState.MockCallResult.{ContinueChain, Return, Unexpected}
+import mockosaur.impl.MockExpectationsState.MockCallResult._
 import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 
 object MockState {
@@ -19,9 +19,10 @@ object MockState {
       zombie
     } else {
       MockExpectationsState.appendActualCallForMock(mock, call) match {
-        case Return(toReturn) => toReturn
-        case ContinueChain    => zombie
-        case Unexpected       => throw MockosaurUnexpectedFunctionCallException(call)
+        case Return(toReturn)  => toReturn
+        case ContinueChain     => zombie
+        case UnexpectedParams  => throw MockosaurUnexpectedFunctionParamsException(call)
+        case UnexpectedCall    => throw MockosaurUnexpectedFunctionCallException(call)
       }
     }
   }

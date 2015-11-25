@@ -12,6 +12,7 @@ class MockInvocationTest extends MockosaurTest {
       def theFunc(): Unit = ???
       def theNoArgStringFunc(): String = ???
       def theNoParensStringFunc: String = ???
+      def theArgStringFunc(one: String, two: AnyRef): String = ???
     }
 
     trait Scope {
@@ -45,7 +46,27 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoArgStringFunc() shouldBe "Another String"
     }
 
-    "return value if expected to do so - with params" in pending
+    "return value if expected to do so - with params" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = new Object()
+
+      calling(theMock).theArgStringFunc("one", two).returns("A String")
+
+      theMock.theArgStringFunc("one", two) shouldBe "A String"
+    }
+
+    "throw an exception if function is called with unexpected params" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = new Object()
+
+      calling(theMock).theArgStringFunc("one", two).returns("A String")
+
+      intercept[MockosaurUnexpectedFunctionParamsException] {
+        theMock.theArgStringFunc("seven", two)
+      }
+    }
 
     "return value if expected to do so - no parens" in new Scope {
       val theMock = mock[TheTestClass]
