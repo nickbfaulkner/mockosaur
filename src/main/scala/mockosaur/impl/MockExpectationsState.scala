@@ -1,5 +1,7 @@
 package mockosaur.impl
 
+import java.util.concurrent.atomic.AtomicReference
+
 import mockosaur.model.{FunctionCallChain, FunctionCall, FunctionReturnValue, Mock}
 
 import scala.collection.mutable
@@ -21,8 +23,9 @@ private[mockosaur] object MockExpectationsState {
     case object Unexpected extends MockCallResult
   }
 
-  private val globalState: mutable.Map[Mock, IndividualMockState] =
-    mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
+  private def buildEmptyState() = mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
+  private val globalStateRef: AtomicReference[mutable.Map[Mock, IndividualMockState]] = new AtomicReference(buildEmptyState())
+  private def globalState: mutable.Map[Mock, IndividualMockState] = globalStateRef.get
 
   def appendRecordedCallForMock(mock: Mock, call: FunctionCall) = MockExpectationsState.synchronized {
     val oldState = globalState(mock)
@@ -84,7 +87,7 @@ private[mockosaur] object MockExpectationsState {
   }
 
   def clear(): Unit = MockExpectationsState.synchronized {
-    globalState.clear()
+    globalStateRef.set(buildEmptyState())
   }
 
   def printDebugString(): Unit = MockExpectationsState.synchronized {
