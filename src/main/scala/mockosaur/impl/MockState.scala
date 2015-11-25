@@ -1,6 +1,6 @@
 package mockosaur.impl
 
-import mockosaur.exceptions.{MockosaurReturnsRequiredException, MockosaurNoOngoingRecordException, MockosaurRecordAlreadyOngoingException, MockosaurUnexpectedFunctionCallException}
+import mockosaur.exceptions._
 import mockosaur.impl.MockExpectationsState.MockCallResult.{ContinueChain, Return, Unexpected}
 import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
 
@@ -42,9 +42,22 @@ object MockState {
     }
   }
 
+  def verifyNothingOutstanding(mocks: Seq[Mock]): Unit = {
+    if (mocks.exists(MockExpectationsState.hasOngoingRecordingState)) {
+      throw MockosaurIncompleteMockException()
+    } else {
+      val unmet = mocks.map(m => m -> MockExpectationsState.getUnmetExpectations(m)).toMap
+      println("unmet " + unmet)
+      if (unmet.values.exists(_.nonEmpty)) {
+        throw MockosaurUnmetExpectationException(unmet)
+      }
+    }
+  }
+
   // this is required because the tests explicitly leave mocks in a bad state
   private[mockosaur] def reset(): Unit = {
     MockExpectationsState.clear()
     MockRecordingState.stopRecording()
   }
+
 }

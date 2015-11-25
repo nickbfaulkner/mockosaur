@@ -34,7 +34,8 @@ package object mockosaur {
     }
   }
 
-  def verifyAllCallsWereMade(): Unit = {
-    ()
+  def verifyAllCallsWereMadeTo(mocks: AnyRef*): Unit = {
+    require(mocks.nonEmpty)
+    MockState.verifyNothingOutstanding(mocks.map(Mock.apply))
   }
 }

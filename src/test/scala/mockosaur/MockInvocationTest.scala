@@ -62,21 +62,51 @@ class MockInvocationTest extends MockosaurTest {
 
       theMock.theNoArgStringFunc()
 
-      verifyAllCallsWereMade()
+      verifyAllCallsWereMadeTo(theMock)
     }
-//
-//    "throw an exception if a mocked call is not used" in new Scope {
-//      val theMock = mock[TheTestClass]
-//
-//      calling(theMock).theNoArgStringFunc().returns("Another String")
-//
-//      intercept[MockosaurUnmetExpectationException] {
-//        verifyAllCallsWereMade()
-//      }
-//    }
+
+    "verify all calls were made to multiple mocks" in new Scope {
+      val theMock1 = mock[TheTestClass]
+      val theMock2 = mock[TheTestClass]
+
+      calling(theMock1).theNoArgStringFunc().returns("Another String")
+      calling(theMock2).theNoArgStringFunc().returns("Another String")
+
+      theMock1.theNoArgStringFunc()
+      theMock2.theNoArgStringFunc()
+
+      verifyAllCallsWereMadeTo(theMock1, theMock2)
+    }
+
+    "throw an exception if a mocked call is not used" in new Scope() {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc().returns("Another String")
+
+      intercept[MockosaurUnmetExpectationException] {
+        verifyAllCallsWereMadeTo(theMock)
+      }
+    }
+
+    "throw an exception if a partially mocked call is not used" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc() // no returns specified
+
+      intercept[MockosaurIncompleteMockException] {
+        verifyAllCallsWereMadeTo(theMock)
+      }
+    }
+
+    "throw an exception if no mocks are passed when verifying all calls were made" in new Scope {
+      intercept[IllegalArgumentException] {
+        verifyAllCallsWereMadeTo()
+      }
+    }
 
     "multiple calls" in pending
     "implicits" in pending
+    "returning functions" in pending
 
     "throw an exception if returns is called when no mock record is ongoing" in new Scope {
       val theMock = mock[TheTestClass]
@@ -134,6 +164,18 @@ class MockInvocationTest extends MockosaurTest {
       intercept[MockosaurRecordAlreadyOngoingException] {
         calling(theMock2)
       }
+    }
+
+    "clear out expectations when resetting state (internal util)" in new Scope {
+      val theMock1 = mock[TheTestClass]
+      val theMock2 = mock[TheTestClass]
+
+      calling(theMock1).theNoArgStringFunc().returns("Another String")
+      calling(theMock2).theNoArgStringFunc().returns("Another String")
+
+      MockState.reset()
+
+      verifyAllCallsWereMadeTo(theMock1, theMock2)
     }
 
     "work as expected if multiple mocks are recording at once on different threads" in new Scope {
