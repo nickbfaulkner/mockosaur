@@ -78,11 +78,11 @@ private[mockosaur] object MockExpectationsState {
     }
   }
 
-  def completeCallChain(mock: Mock, toReturn: FunctionReturnValue) = MockExpectationsState.synchronized {
+  def completeCallChain(mock: Mock, toReturn: Seq[FunctionReturnValue]) = MockExpectationsState.synchronized {
     val oldState = globalState(mock)
-    val newExpectation = FunctionCallChain(oldState.inProgressRecording, toReturn)
+    val newExpectations = toReturn.map(FunctionCallChain(oldState.inProgressRecording, _))
     val newState = oldState.copy(inProgressRecording = Seq.empty,
-                                 pendingExpectations = oldState.pendingExpectations:+ newExpectation)
+                                 pendingExpectations = oldState.pendingExpectations ++ newExpectations)
     globalState.update(mock, newState)
   }
 

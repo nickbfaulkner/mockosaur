@@ -36,6 +36,10 @@ object MockState {
   }
 
   def recordingReturn(toReturn: FunctionReturnValue): Unit = {
+    recordingReturnSequentially(Seq(toReturn))
+  }
+
+  def recordingReturnSequentially(toReturn: Seq[FunctionReturnValue]): Unit = {
     MockRecordingState.getRecordingMock() match {
       case None       => throw MockosaurNoOngoingRecordException()
       case Some(mock) => MockExpectationsState.completeCallChain(mock, toReturn)
@@ -48,7 +52,6 @@ object MockState {
       throw MockosaurIncompleteMockException()
     } else {
       val unmet = mocks.map(m => m -> MockExpectationsState.getUnmetExpectations(m)).toMap
-      println("unmet " + unmet)
       if (unmet.values.exists(_.nonEmpty)) {
         throw MockosaurUnmetExpectationException(unmet)
       }

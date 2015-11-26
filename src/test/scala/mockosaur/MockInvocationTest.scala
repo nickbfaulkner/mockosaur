@@ -41,9 +41,9 @@ class MockInvocationTest extends MockosaurTest {
     "return value if expected to do so - no args param" in new Scope {
       val theMock = mock[TheTestClass]
 
-      calling(theMock).theNoArgStringFunc().returns("Another String")
+      calling(theMock).theNoArgStringFunc().returns("A String")
 
-      theMock.theNoArgStringFunc() shouldBe "Another String"
+      theMock.theNoArgStringFunc() shouldBe "A String"
     }
 
     "return value if expected to do so - with params" in new Scope {
@@ -71,15 +71,45 @@ class MockInvocationTest extends MockosaurTest {
     "return value if expected to do so - no parens" in new Scope {
       val theMock = mock[TheTestClass]
 
-      calling(theMock).theNoParensStringFunc.returns("Another String")
+      calling(theMock).theNoParensStringFunc.returns("A String")
 
-      theMock.theNoParensStringFunc shouldBe "Another String"
+      theMock.theNoParensStringFunc shouldBe "A String"
     }
+
+    "returns the expected results for multiple expectations in the order they were specified - specified separately" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc().returns("A String")
+      calling(theMock).theNoArgStringFunc().returns("Another String")
+
+      theMock.theNoArgStringFunc() shouldBe "A String"
+      theMock.theNoArgStringFunc() shouldBe "Another String"
+
+      intercept[MockosaurUnexpectedFunctionCallException] {
+        theMock.theNoArgStringFunc()
+      }
+    }
+
+    "returns the expected results for multiple expectations in the order they were specified - specified together" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgStringFunc().returnsSequentially("A String", "Another String")
+
+      theMock.theNoArgStringFunc() shouldBe "A String"
+      theMock.theNoArgStringFunc() shouldBe "Another String"
+
+      intercept[MockosaurUnexpectedFunctionCallException] {
+        theMock.theNoArgStringFunc()
+      }
+    }
+
+    "implicits" in pending
+    "returning functions" in pending
 
     "verify all calls were made to a mock" in new Scope {
       val theMock = mock[TheTestClass]
 
-      calling(theMock).theNoArgStringFunc().returns("Another String")
+      calling(theMock).theNoArgStringFunc().returns("A String")
 
       theMock.theNoArgStringFunc()
 
@@ -90,8 +120,8 @@ class MockInvocationTest extends MockosaurTest {
       val theMock1 = mock[TheTestClass]
       val theMock2 = mock[TheTestClass]
 
-      calling(theMock1).theNoArgStringFunc().returns("Another String")
-      calling(theMock2).theNoArgStringFunc().returns("Another String")
+      calling(theMock1).theNoArgStringFunc().returns("A String")
+      calling(theMock2).theNoArgStringFunc().returns("A String")
 
       theMock1.theNoArgStringFunc()
       theMock2.theNoArgStringFunc()
@@ -102,7 +132,7 @@ class MockInvocationTest extends MockosaurTest {
     "throw an exception if a mocked call is not used" in new Scope() {
       val theMock = mock[TheTestClass]
 
-      calling(theMock).theNoArgStringFunc().returns("Another String")
+      calling(theMock).theNoArgStringFunc().returns("A String")
 
       intercept[MockosaurUnmetExpectationException] {
         verifyAllCallsWereMadeTo(theMock)
@@ -124,10 +154,6 @@ class MockInvocationTest extends MockosaurTest {
         verifyAllCallsWereMadeTo()
       }
     }
-
-    "multiple calls" in pending
-    "implicits" in pending
-    "returning functions" in pending
 
     "throw an exception if returns is called when no mock record is ongoing" in new Scope {
       val theMock = mock[TheTestClass]
@@ -191,8 +217,8 @@ class MockInvocationTest extends MockosaurTest {
       val theMock1 = mock[TheTestClass]
       val theMock2 = mock[TheTestClass]
 
-      calling(theMock1).theNoArgStringFunc().returns("Another String")
-      calling(theMock2).theNoArgStringFunc().returns("Another String")
+      calling(theMock1).theNoArgStringFunc().returns("A String")
+      calling(theMock2).theNoArgStringFunc().returns("A String")
 
       MockState.reset()
 

@@ -28,9 +28,12 @@ package object mockosaur {
   }
 
   implicit class MockCallResultAnyRefReturning[T](val ref: T) extends AnyVal {
-    def returns(toReturn: T): T = {
+    def returns(toReturn: T): Unit = {
       MockState.recordingReturn(FunctionReturnValue(toReturn.asInstanceOf[AnyRef]))
-      toReturn
+    }
+
+    def returnsSequentially(toReturn: T*): Unit = {
+      MockState.recordingReturnSequentially(toReturn.map(value => FunctionReturnValue(value.asInstanceOf[AnyRef])))
     }
   }
 
