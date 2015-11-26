@@ -173,11 +173,35 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "throw an exception if a return value is called when mock record is already complete" in new Scope {
+    "throw an exception if returns is called when mock record is already complete - after returns" in new Scope {
       val theMock = mock[TheTestClass]
 
       intercept[MockosaurNoOngoingRecordException] {
         calling(theMock).theFunc().returns(1).returns(2)
+      }
+    }
+
+    "throw an exception if returns is called when mock record is already complete - after returns sequentially" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurNoOngoingRecordException] {
+        calling(theMock).theFunc().returns(1).returns(2)
+      }
+    }
+
+    "throw an exception if returnsSequentially is called when mock record is already complete - after returns" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurNoOngoingRecordException] {
+        calling(theMock).theFunc().returns(1).returnsSequentially(2)
+      }
+    }
+
+    "throw an exception if returnsSequentially is called when mock record is already complete - after returns sequentially" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurNoOngoingRecordException] {
+        calling(theMock).theFunc().returnsSequentially(1).returnsSequentially(2)
       }
     }
 
@@ -213,18 +237,6 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "clear out expectations when resetting state (internal util)" in new Scope {
-      val theMock1 = mock[TheTestClass]
-      val theMock2 = mock[TheTestClass]
-
-      calling(theMock1).theNoArgStringFunc().returns("A String")
-      calling(theMock2).theNoArgStringFunc().returns("A String")
-
-      MockState.reset()
-
-      verifyAllCallsWereMadeTo(theMock1, theMock2)
-    }
-
     "work as expected if multiple mocks are recording at once on different threads" in new Scope {
       val threadCount = 10
       val complete = new AtomicInteger(0)
@@ -245,6 +257,18 @@ class MockInvocationTest extends MockosaurTest {
       threads.foreach(_.join())
 
       complete.get() shouldBe threadCount
+    }
+
+    "clear out expectations when resetting state (internal util)" in new Scope {
+      val theMock1 = mock[TheTestClass]
+      val theMock2 = mock[TheTestClass]
+
+      calling(theMock1).theNoArgStringFunc().returns("A String")
+      calling(theMock2).theNoArgStringFunc().returns("A String")
+
+      MockState.reset()
+
+      verifyAllCallsWereMadeTo(theMock1, theMock2)
     }
   }
 }
