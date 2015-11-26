@@ -11,7 +11,6 @@ package object mockosaur {
   def mock[T <: AnyRef](implicit tag: ClassTag[T]): T = {
     MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
       override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
-        println("--- Called " + method + " with args " + args)
         val result = MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArg.apply)))
         result.value.asInstanceOf[AnyRef]
       }
