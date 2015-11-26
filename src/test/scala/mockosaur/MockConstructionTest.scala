@@ -44,6 +44,16 @@ class MockConstructionTest extends MockosaurTest {
 
     }
 
+    "Mock classes with private constructors" in { pending // CGLIB can't mock classes with private constructors
+
+      class TheTestClass private (a: String, b: Object, c: Int, d: Any) {}
+
+      val theMock = mock[TheTestClass]
+
+      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
     "Mock objects" in {
 
       object TheTestObject
