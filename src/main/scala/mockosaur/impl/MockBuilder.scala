@@ -31,13 +31,21 @@ object MockBuilder {
   }
 
   def buildZombie[T](target: Class[T]): T = {
-    if (target.isAssignableFrom(Void.TYPE)) {
-      ().asInstanceOf[T]
-    } else {
-      val objenesis = new ObjenesisStd()
-      val instantiator = objenesis.getInstantiatorOf(target)
-      instantiator.newInstance()
-    }
+    (target match {
+      case java.lang.Void.TYPE      => ()
+      case java.lang.Boolean.TYPE   => true
+      case java.lang.Byte.TYPE      => Byte.MaxValue
+      case java.lang.Character.TYPE => 'a'
+      case java.lang.Double.TYPE    => Double.MaxValue
+      case java.lang.Float.TYPE     => Float.MaxValue
+      case java.lang.Integer.TYPE   => Int.MaxValue
+      case java.lang.Long.TYPE      => Long.MaxValue
+      case java.lang.Short.TYPE     => Short.MaxValue
+      case _ =>
+        val objenesis = new ObjenesisStd()
+        val instantiator = objenesis.getInstantiatorOf(target)
+        instantiator.newInstance()
+    }).asInstanceOf[T]
   }
 }
 

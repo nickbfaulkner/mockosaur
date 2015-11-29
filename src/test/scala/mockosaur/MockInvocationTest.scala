@@ -1,8 +1,13 @@
 package mockosaur
 
 import java.util.concurrent.atomic.AtomicInteger
+import mockosaur.MockInvocationTest.AnInt
 import mockosaur.exceptions._
 import mockosaur.impl.MockState
+
+object MockInvocationTest {
+  final case class AnInt(int: Int) extends AnyVal
+}
 
 class MockInvocationTest extends MockosaurTest {
 
@@ -12,6 +17,7 @@ class MockInvocationTest extends MockosaurTest {
       def theFunc(): Unit = ???
       def theNoArgStringFunc(): String = ???
       def theNoArgIntFunc(): Int = ???
+      def theNoArgValueClassFunc(): AnInt = ???
       def theNoParensStringFunc: String = ???
       def theArgStringFunc(one: String, two: AnyRef): String = ???
       def theAnyValArgStringFunc(one: String, two: AnyRef, three: Int, four: AnyVal): String = ???
@@ -48,12 +54,20 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoArgStringFunc() shouldBe "A String"
     }
 
-    "return AnyVal value if expected to do so" in new Scope { pending
+    "return AnyVal value if expected to do so - primitive" in new Scope {
       val theMock = mock[TheTestClass]
 
       calling(theMock).theNoArgIntFunc().returns(1)
 
       theMock.theNoArgIntFunc() shouldBe 1
+    }
+
+    "return AnyVal value if expected to do so - value class" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgValueClassFunc().returns(AnInt(1))
+
+      theMock.theNoArgValueClassFunc() shouldBe AnInt(1)
     }
 
     "return value if expected to do so - with params" in new Scope {

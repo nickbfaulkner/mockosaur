@@ -6,6 +6,7 @@ object MockConstructionTest {
   class TheTestValueClass(val s: String) extends AnyVal
   class TheTestClassWithDefaultConstructor {}
   trait TheTestTrait {}
+  abstract class TheAbstractClass { def abc: Int }
   final class TheTestFinalClass {}
   class TheTestClassWithNonDefaultConstructor(a: String, b: Object, c: Int, d: Any) {}
   class TheTestClassWithPrivateConstructor private (a: String, b: Object, c: Int, d: Any) {}
@@ -37,6 +38,14 @@ class MockConstructionTest extends MockosaurTest {
       val theMock = mock[TheTestFinalClass]
 
       classOf[TheTestFinalClass].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock abstract classes" in {
+
+      val theMock = mock[TheAbstractClass]
+
+      classOf[TheAbstractClass].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
