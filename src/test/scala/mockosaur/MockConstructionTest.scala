@@ -1,66 +1,74 @@
 package mockosaur
 
+import mockosaur.MockConstructionTest._
+
+object MockConstructionTest {
+  class TheTestValueClass(val s: String) extends AnyVal
+  class TheTestClassWithDefaultConstructor {}
+  trait TheTestTrait {}
+  final class TheTestFinalClass {}
+  class TheTestClassWithNonDefaultConstructor(a: String, b: Object, c: Int, d: Any) {}
+  class TheTestClassWithPrivateConstructor private (a: String, b: Object, c: Int, d: Any) {}
+  object TheTestObject
+}
+
 class MockConstructionTest extends MockosaurTest {
 
   "Mockosaur should" - {
 
     "Mock traits" in {
 
-      trait TheTestClass {}
+      val theMock = mock[TheTestTrait]
 
-      val theMock = mock[TheTestClass]
-
-      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+      classOf[TheTestTrait].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
     "Mock classes with default constructors" in {
 
-      class TheTestClass {}
+      val theMock = mock[TheTestClassWithDefaultConstructor]
 
-      val theMock = mock[TheTestClass]
-
-      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+      classOf[TheTestClassWithDefaultConstructor].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
     "Mock final classes" in { pending // CGLIB can't mock final classes
 
-      final class TheTestClass {}
+      val theMock = mock[TheTestFinalClass]
 
-      val theMock = mock[TheTestClass]
-
-      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+      classOf[TheTestFinalClass].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
     "Mock classes with non-default constructors" in {
 
-      class TheTestClass(a: String, b: Object, c: Int, d: Any) {}
+      val theMock = mock[TheTestClassWithNonDefaultConstructor]
 
-      val theMock = mock[TheTestClass]
-
-      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+      classOf[TheTestClassWithNonDefaultConstructor].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
     "Mock classes with private constructors" in { pending // CGLIB can't mock classes with private constructors
 
-      class TheTestClass private (a: String, b: Object, c: Int, d: Any) {}
+      val theMock = mock[TheTestClassWithPrivateConstructor]
 
-      val theMock = mock[TheTestClass]
-
-      classOf[TheTestClass].isAssignableFrom(theMock.getClass) shouldBe true
+      classOf[TheTestClassWithPrivateConstructor].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
     "Mock objects" in {
 
-      object TheTestObject
-
       val theMock = mock(TheTestObject)
 
       TheTestObject.getClass.isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock value classes" in { pending // CGLIB can't mock final classes
+
+      val theMock = mock[TheTestValueClass]
+
+      classOf[TheTestValueClass].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
   }

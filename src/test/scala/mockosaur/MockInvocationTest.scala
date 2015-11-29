@@ -11,8 +11,10 @@ class MockInvocationTest extends MockosaurTest {
     class TheTestClass {
       def theFunc(): Unit = ???
       def theNoArgStringFunc(): String = ???
+      def theNoArgIntFunc(): Int = ???
       def theNoParensStringFunc: String = ???
       def theArgStringFunc(one: String, two: AnyRef): String = ???
+      def theAnyValArgStringFunc(one: String, two: AnyRef, three: Int, four: AnyVal): String = ???
     }
 
     trait Scope {
@@ -46,6 +48,14 @@ class MockInvocationTest extends MockosaurTest {
       theMock.theNoArgStringFunc() shouldBe "A String"
     }
 
+    "return AnyVal value if expected to do so" in new Scope { pending
+      val theMock = mock[TheTestClass]
+
+      calling(theMock).theNoArgIntFunc().returns(1)
+
+      theMock.theNoArgIntFunc() shouldBe 1
+    }
+
     "return value if expected to do so - with params" in new Scope {
       val theMock = mock[TheTestClass]
 
@@ -54,6 +64,16 @@ class MockInvocationTest extends MockosaurTest {
       calling(theMock).theArgStringFunc("one", two).returns("A String")
 
       theMock.theArgStringFunc("one", two) shouldBe "A String"
+    }
+
+    "return value if expected to do so - with AnyVal params" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = new Object()
+
+      calling(theMock).theAnyValArgStringFunc("one", two, 3, 4).returns("A String")
+
+      theMock.theAnyValArgStringFunc("one", two, 3, 4) shouldBe "A String"
     }
 
     "throw an exception if function is called with unexpected params" in new Scope {
