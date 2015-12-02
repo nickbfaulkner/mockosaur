@@ -5,7 +5,7 @@ import java.lang.reflect.Method
 import net.sf.cglib.proxy.{Enhancer, MethodInterceptor, MethodProxy}
 import org.objenesis.ObjenesisStd
 
-object MockBuilder {
+private[mockosaur] object MockBuilder {
   def build[T](target: Class[T], handler: MockFunctionHandler[T]): T = {
 
     val interceptor = new MethodInterceptor() {
@@ -49,6 +49,6 @@ object MockBuilder {
   }
 }
 
-trait MockFunctionHandler[T] {
+private[mockosaur] trait MockFunctionHandler[T] {
   def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef
 }

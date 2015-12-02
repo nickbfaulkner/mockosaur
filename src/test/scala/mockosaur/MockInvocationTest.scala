@@ -2,8 +2,8 @@ package mockosaur
 
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
+
 import mockosaur.MockInvocationTest.AnInt
-import mockosaur.exceptions._
 import mockosaur.impl.MockState
 
 object MockInvocationTest {

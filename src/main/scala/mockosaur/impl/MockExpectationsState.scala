@@ -2,7 +2,7 @@ package mockosaur.impl
 
 import java.util.concurrent.atomic.AtomicReference
 
-import mockosaur.model._
+import mockosaur.{FunctionCall, FunctionCallChain, FunctionResult, Mock}
 
 import scala.collection.mutable
 

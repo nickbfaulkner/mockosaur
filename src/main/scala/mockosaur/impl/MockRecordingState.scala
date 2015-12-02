@@ -1,6 +1,6 @@
 package mockosaur.impl
 
-import mockosaur.model.Mock
+import mockosaur.Mock
 
 import scala.ref.WeakReference
 

@@ -1,6 +1,4 @@
-package mockosaur.exceptions
-
-import mockosaur.model.{FunctionCallChain, Mock, FunctionCall}
+package mockosaur
 
 class MockosaurException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
   def this()                = this(null, null)

@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 
 import scala.util.{Failure, Success, Try}
 
-object ReflectionUtils {
+private[mockosaur] object ReflectionUtils {
 
   // takes the class of a value class and returns method references that have explicitly been added or
   // are the accessor for the underlying value

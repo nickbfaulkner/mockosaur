@@ -1,10 +1,9 @@
 package mockosaur.impl
 
-import mockosaur.exceptions._
+import mockosaur._
 import mockosaur.impl.MockExpectationsState.MockCallResult._
-import mockosaur.model._
 
-object MockState {
+private[mockosaur] object MockState {
 
   def processFunctionCall(mock: Mock,
                           call: FunctionCall): FunctionResult = {
