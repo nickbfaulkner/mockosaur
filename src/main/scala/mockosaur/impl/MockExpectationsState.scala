@@ -2,7 +2,7 @@ package mockosaur.impl
 
 import java.util.concurrent.atomic.AtomicReference
 
-import mockosaur.model.{FunctionCallChain, FunctionCall, FunctionReturnValue, Mock}
+import mockosaur.model._
 
 import scala.collection.mutable
 
@@ -18,7 +18,7 @@ private[mockosaur] object MockExpectationsState {
 
   sealed trait MockCallResult
   object MockCallResult {
-    case class Return(functionReturnValue: FunctionReturnValue) extends MockCallResult
+    case class Result(functionResult: FunctionResult) extends MockCallResult
     case object ContinueChain extends MockCallResult
     case object UnexpectedParams extends MockCallResult
     case object UnexpectedCall extends MockCallResult
@@ -52,7 +52,7 @@ private[mockosaur] object MockExpectationsState {
                                           pendingExpectations = newPending,
                                           invokedExpectations = newInvoked)
 
-        MockCallResult.Return(chain.toReturn) -> newState
+        MockCallResult.Result(chain.result) -> newState
 
       case None =>
 
@@ -78,11 +78,19 @@ private[mockosaur] object MockExpectationsState {
     }
   }
 
-  def completeCallChain(mock: Mock, toReturn: Seq[FunctionReturnValue]) = MockExpectationsState.synchronized {
+  def completeCallChain(mock: Mock, toReturn: Seq[FunctionResult.Return]) = MockExpectationsState.synchronized {
     val oldState = globalState(mock)
     val newExpectations = toReturn.map(FunctionCallChain(oldState.inProgressRecording, _))
     val newState = oldState.copy(inProgressRecording = Seq.empty,
                                  pendingExpectations = oldState.pendingExpectations ++ newExpectations)
+    globalState.update(mock, newState)
+  }
+
+  def completeCallChainWithThrow(mock: Mock, toThrow: FunctionResult.Throw) = MockExpectationsState.synchronized {
+    val oldState = globalState(mock)
+    val newExpectation = FunctionCallChain(oldState.inProgressRecording, toThrow)
+    val newState = oldState.copy(inProgressRecording = Seq.empty,
+                                 pendingExpectations = oldState.pendingExpectations :+ newExpectation)
     globalState.update(mock, newState)
   }
 

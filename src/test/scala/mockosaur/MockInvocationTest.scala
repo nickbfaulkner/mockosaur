@@ -1,5 +1,6 @@
 package mockosaur
 
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import mockosaur.MockInvocationTest.AnInt
 import mockosaur.exceptions._
@@ -137,9 +138,29 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
+    "throws an exception when instructed to do so" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val exception = new IOException("TEST")
+      calling(theMock).theNoArgStringFunc().throws(exception)
+
+      val caught = intercept[IOException] {
+        theMock.theNoArgStringFunc()
+      }
+
+      caught shouldBe exception
+    }
+
+    "throw a syxtem exception if throws is called when no mock record is ongoing" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurNoOngoingRecordException] {
+        "a string".length.throws(new RuntimeException("TEST"))
+      }
+    }
+
     "implicits" in pending
     "returning functions" in pending
-    "throws" in pending
     "wildcards" in pending
 
     "verify all calls were made to a mock" in new Scope {

@@ -2,14 +2,14 @@ package mockosaur.impl
 
 import mockosaur.exceptions._
 import mockosaur.impl.MockExpectationsState.MockCallResult._
-import mockosaur.model.{FunctionCall, FunctionReturnValue, Mock}
+import mockosaur.model._
 
 object MockState {
 
   def processFunctionCall(mock: Mock,
-                          call: FunctionCall): FunctionReturnValue = {
+                          call: FunctionCall): FunctionResult = {
 
-    val zombie = FunctionReturnValue(MockBuilder.buildZombie(call.function.getReturnType))
+    val zombie = FunctionResult.Return(MockBuilder.buildZombie(call.function.getReturnType))
 
     if (MockRecordingState.isRecording(mock)) {
       if (MockExpectationsState.isCallRecordOngoing(mock, call)) {
@@ -19,10 +19,10 @@ object MockState {
       zombie
     } else {
       MockExpectationsState.appendActualCallForMock(mock, call) match {
-        case Return(toReturn)  => toReturn
-        case ContinueChain     => zombie
-        case UnexpectedParams  => throw MockosaurUnexpectedFunctionParamsException(call)
-        case UnexpectedCall    => throw MockosaurUnexpectedFunctionCallException(call)
+        case Result(result)   => result
+        case ContinueChain    => zombie
+        case UnexpectedParams => throw MockosaurUnexpectedFunctionParamsException(call)
+        case UnexpectedCall   => throw MockosaurUnexpectedFunctionCallException(call)
       }
     }
   }
@@ -35,14 +35,22 @@ object MockState {
     }
   }
 
-  def recordingReturn(toReturn: FunctionReturnValue): Unit = {
+  def recordingReturn(toReturn: FunctionResult.Return): Unit = {
     recordingReturnSequentially(Seq(toReturn))
   }
 
-  def recordingReturnSequentially(toReturn: Seq[FunctionReturnValue]): Unit = {
+  def recordingReturnSequentially(toReturn: Seq[FunctionResult.Return]): Unit = {
     MockRecordingState.getRecordingMock() match {
       case None       => throw MockosaurNoOngoingRecordException()
       case Some(mock) => MockExpectationsState.completeCallChain(mock, toReturn)
+                         MockRecordingState.stopRecording()
+    }
+  }
+
+  def recordingThrow(toThrow: FunctionResult.Throw): Unit = {
+    MockRecordingState.getRecordingMock() match {
+      case None       => throw MockosaurNoOngoingRecordException()
+      case Some(mock) => MockExpectationsState.completeCallChainWithThrow(mock, toThrow)
                          MockRecordingState.stopRecording()
     }
   }
