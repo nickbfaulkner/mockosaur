@@ -6,7 +6,7 @@ import mockosaur.exceptions._
 import mockosaur.impl.MockState
 
 object MockInvocationTest {
-  final case class AnInt(int: Int) extends AnyVal
+  final case class AnInt(theInt: Int) extends AnyVal
 }
 
 class MockInvocationTest extends MockosaurTest {
@@ -139,6 +139,8 @@ class MockInvocationTest extends MockosaurTest {
 
     "implicits" in pending
     "returning functions" in pending
+    "throws" in pending
+    "wildcards" in pending
 
     "verify all calls were made to a mock" in new Scope {
       val theMock = mock[TheTestClass]

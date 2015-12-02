@@ -1,10 +1,12 @@
 
 import java.lang.reflect.Method
 
-import mockosaur.impl.{MockBuilder, MockFunctionHandler, MockState}
+import mockosaur.exceptions.MockosaurSystemException
+import mockosaur.impl.{MockBuilder, MockFunctionHandler, MockState, ReflectionUtils}
 import mockosaur.model.{FunctionArg, FunctionCall, FunctionReturnValue, Mock}
 
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 package object mockosaur {
 
@@ -12,7 +14,7 @@ package object mockosaur {
     MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
       override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
         val result = MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArg.apply)))
-        result.value.asInstanceOf[AnyRef]
+        forceAnyToExpectedReturnType(result.value, method.getReturnType)
       }
     })
   }
@@ -40,4 +42,35 @@ package object mockosaur {
     require(mocks.nonEmpty)
     MockState.verifyNothingOutstanding(mocks.map(Mock.apply))
   }
+
+  private def forceAnyToExpectedReturnType(value: Any, _expectedReturnType: Class[_]): AnyRef = {
+    val expectedReturnType = primitiveToBoxedType(_expectedReturnType)
+
+    if (value.getClass == expectedReturnType || value.isInstanceOf[Unit]) {
+      value.asInstanceOf[AnyRef]
+    } else {
+      // we've type checked at compile time and boxed the expectation but
+      // the class still doesn't match... assume that the value is a value class
+      ReflectionUtils.unwrapValueClass(value) match {
+        case Success(result) => result
+        case Failure(t: Throwable) => throw new MockosaurSystemException(s"Could not process the return type of ${value.getClass}, expected $expectedReturnType", t)
+      }
+    }
+
+  }
+
+  private def primitiveToBoxedType(value: Class[_]): Class[_] = {
+    value match {
+      case java.lang.Boolean.TYPE   => classOf[java.lang.Boolean]
+      case java.lang.Byte.TYPE      => classOf[java.lang.Byte]
+      case java.lang.Character.TYPE => classOf[java.lang.Character]
+      case java.lang.Double.TYPE    => classOf[java.lang.Double]
+      case java.lang.Float.TYPE     => classOf[java.lang.Float]
+      case java.lang.Integer.TYPE   => classOf[java.lang.Integer]
+      case java.lang.Long.TYPE      => classOf[java.lang.Long]
+      case java.lang.Short.TYPE     => classOf[java.lang.Short]
+      case other                    => other
+    }
+  }
+
 }
