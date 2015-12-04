@@ -11,8 +11,6 @@ import org.objenesis.ObjenesisStd
 private[mockosaur] object MockBuilder {
   def build[T](target: Class[T], handler: MockFunctionHandler[T]): T = {
 
-
-
     val proxiedClass = new ByteBuddy()
       .subclass(target)
       .method(not(isDeclaredBy(classOf[Object])))
@@ -27,7 +25,7 @@ private[mockosaur] object MockBuilder {
 
     val objenesis = new ObjenesisStd()
     val instantiator = objenesis.getInstantiatorOf(proxiedClass)
-    instantiator.newInstance().asInstanceOf[T]
+    instantiator.newInstance()
   }
 
   def buildZombie[T](target: Class[T]): T = {

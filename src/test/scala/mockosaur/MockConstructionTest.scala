@@ -10,6 +10,7 @@ object MockConstructionTest {
   abstract class TheAbstractClass { def abc: Int }
   final class TheTestFinalClass {}
   class TheTestClassWithNonDefaultConstructor(a: String, b: Object, c: Int, d: Any) {}
+  private class TheTestPrivateClass {}
   class TheTestClassWithPrivateConstructor private (a: String, b: Object, c: Int, d: Any) {}
   object TheTestObject
 }
@@ -79,6 +80,14 @@ class MockConstructionTest extends MockosaurTest {
       val theMock = mock[TheTestClassWithNonDefaultConstructor]
 
       classOf[TheTestClassWithNonDefaultConstructor].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock private classes" in {
+
+      val theMock = mock[TheTestPrivateClass]
+
+      classOf[TheTestPrivateClass].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 
