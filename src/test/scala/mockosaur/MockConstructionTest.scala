@@ -58,7 +58,7 @@ class MockConstructionTest extends MockosaurTest {
 
     }
 
-    "Mock final classes" in { pending // CGLIB can't mock final classes
+    "Mock final classes" in { pending // can't mock final classes
 
       val theMock = mock[TheTestFinalClass]
 
@@ -82,7 +82,7 @@ class MockConstructionTest extends MockosaurTest {
 
     }
 
-    "Mock classes with private constructors" in { pending // CGLIB can't mock classes with private constructors
+    "Mock classes with private constructors" in {
 
       val theMock = mock[TheTestClassWithPrivateConstructor]
 
@@ -98,7 +98,7 @@ class MockConstructionTest extends MockosaurTest {
 
     }
 
-    "Mock value classes" in { pending // CGLIB can't mock final classes
+    "Mock value classes" in { pending // can't mock final classes
 
       val theMock = mock[TheTestValueClass]
 

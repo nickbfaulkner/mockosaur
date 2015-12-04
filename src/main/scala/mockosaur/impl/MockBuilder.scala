@@ -1,29 +1,29 @@
 package mockosaur.impl
 
-import java.lang.reflect.Method
+import java.lang.reflect.{InvocationHandler, Method}
 
-import net.sf.cglib.proxy.{Enhancer, MethodInterceptor, MethodProxy}
+import net.bytebuddy.ByteBuddy
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
+import net.bytebuddy.implementation.InvocationHandlerAdapter
+import net.bytebuddy.matcher.ElementMatchers._
 import org.objenesis.ObjenesisStd
 
 private[mockosaur] object MockBuilder {
   def build[T](target: Class[T], handler: MockFunctionHandler[T]): T = {
 
-    val interceptor = new MethodInterceptor() {
-      override def intercept(obj: AnyRef, method: Method, args: Array[AnyRef], proxy: MethodProxy): AnyRef = {
-        if (method.getDeclaringClass == classOf[Object]) {
-          proxy.invokeSuper(obj, args)
-        } else {
-          handler.functionCall(obj.asInstanceOf[T], method, args)
-        }
-      }
-    }
 
-    val enhancer = new Enhancer()
-    enhancer.setSuperclass(target)
-    enhancer.setCallbackType(interceptor.getClass)
-    val proxiedClass = enhancer.createClass()
-    Enhancer.registerCallbacks(proxiedClass, Array(interceptor))
-    enhancer.setClassLoader(getClass.getClassLoader)
+
+    val proxiedClass = new ByteBuddy()
+      .subclass(target)
+      .method(not(isDeclaredBy(classOf[Object])))
+      .intercept(InvocationHandlerAdapter.of(new InvocationHandler {
+        override def invoke(proxy: scala.Any, method: Method, args: Array[AnyRef]): AnyRef = {
+          handler.functionCall(proxy.asInstanceOf[T], method, args)
+        }
+      }))
+      .make()
+      .load(this.getClass.getClassLoader, ClassLoadingStrategy.Default.WRAPPER)
+      .getLoaded
 
     val objenesis = new ObjenesisStd()
     val instantiator = objenesis.getInstantiatorOf(proxiedClass)
