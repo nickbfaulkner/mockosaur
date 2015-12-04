@@ -6,6 +6,7 @@ object MockConstructionTest {
   class TheTestValueClass(val s: String) extends AnyVal
   class TheTestClassWithDefaultConstructor {}
   trait TheTestTrait {}
+  trait TheTestTraitWithTypeParameters[T <: Seq[Set[String]]] {}
   abstract class TheAbstractClass { def abc: Int }
   final class TheTestFinalClass {}
   class TheTestClassWithNonDefaultConstructor(a: String, b: Object, c: Int, d: Any) {}
@@ -22,6 +23,30 @@ class MockConstructionTest extends MockosaurTest {
       val theMock = mock[TheTestTrait]
 
       classOf[TheTestTrait].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock traits with type parameters" in {
+
+      val theMock = mock[TheTestTraitWithTypeParameters[Vector[Set[String]]]]
+
+      classOf[TheTestTraitWithTypeParameters[Vector[Set[String]]]].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock java interfaces" in {
+
+      val theMock = mock[java.io.Serializable]
+
+      classOf[java.io.Serializable].isAssignableFrom(theMock.getClass) shouldBe true
+
+    }
+
+    "Mock scala java interface wrappers" in {
+
+      val theMock = mock[Serializable]
+
+      classOf[Serializable].isAssignableFrom(theMock.getClass) shouldBe true
 
     }
 

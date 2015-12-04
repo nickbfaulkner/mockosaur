@@ -21,7 +21,7 @@ class MockInvocationTest extends MockosaurTest {
       def theNoArgValueClassFunc(): AnInt = ???
       def theNoParensStringFunc: String = ???
       def theArgStringFunc(one: String, two: AnyRef): String = ???
-      def theAnyValArgStringFunc(one: String, two: AnyRef, three: Int, four: AnyVal): String = ???
+      def theAnyValArgStringFunc(one: String, two: AnyRef, three: Int, four: AnyVal, five: AnInt): String = ???
     }
 
     trait Scope {
@@ -86,9 +86,9 @@ class MockInvocationTest extends MockosaurTest {
 
       val two = new Object()
 
-      calling(theMock).theAnyValArgStringFunc("one", two, 3, 4).returns("A String")
+      calling(theMock).theAnyValArgStringFunc("one", two, 3, 4, AnInt(5)).returns("A String")
 
-      theMock.theAnyValArgStringFunc("one", two, 3, 4) shouldBe "A String"
+      theMock.theAnyValArgStringFunc("one", two, 3, 4, AnInt(5)) shouldBe "A String"
     }
 
     "throw an exception if function is called with unexpected params" in new Scope {
@@ -101,6 +101,44 @@ class MockInvocationTest extends MockosaurTest {
       intercept[MockosaurUnexpectedFunctionParamsException] {
         theMock.theArgStringFunc("seven", two)
       }
+    }
+
+    "accept wildcards in place of param values" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = new Object()
+
+      calling(theMock).theAnyValArgStringFunc(any[String], two, any[Int], 4, any[AnInt]).returns("A String")
+
+      theMock.theAnyValArgStringFunc("one", two, 3, 4, AnInt(5)) shouldBe "A String"
+
+      intercept[MockosaurUnexpectedFunctionParamsException] {
+        theMock.theAnyValArgStringFunc("one", two, 3, 9, AnInt(5))
+      }
+    }
+
+    "throw if wildcard mismatches" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = new Object()
+
+      calling(theMock).theAnyValArgStringFunc(any[String], two, any[Int], 4, any[AnInt]).returns("A String")
+
+      intercept[MockosaurUnexpectedFunctionParamsException] {
+        theMock.theAnyValArgStringFunc("one", two, 3, 9, AnInt(5))
+      }
+    }
+
+    "throw if wildcard type is not specified" in pending
+
+    "accept other mocks as param values" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      val two = mock[Runnable]
+
+      calling(theMock).theArgStringFunc("one", two).returns("A String")
+
+      theMock.theArgStringFunc("one", two) shouldBe "A String"
     }
 
     "return value if expected to do so - no parens" in new Scope {
@@ -151,7 +189,7 @@ class MockInvocationTest extends MockosaurTest {
       caught shouldBe exception
     }
 
-    "throw a syxtem exception if throws is called when no mock record is ongoing" in new Scope {
+    "throw a system exception if throws is called when no mock record is ongoing" in new Scope {
       val theMock = mock[TheTestClass]
 
       intercept[MockosaurNoOngoingRecordException] {
@@ -161,7 +199,6 @@ class MockInvocationTest extends MockosaurTest {
 
     "implicits" in pending
     "returning functions" in pending
-    "wildcards" in pending
 
     "verify all calls were made to a mock" in new Scope {
       val theMock = mock[TheTestClass]

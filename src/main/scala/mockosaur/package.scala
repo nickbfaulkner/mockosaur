@@ -5,7 +5,7 @@ import scala.reflect.ClassTag
 
 package object mockosaur {
 
-  def mock[T](implicit tag: ClassTag[T]): T = MockosaurOperations.mock[T]
+  def mock[T <: Any](implicit tag: ClassTag[T]): T = MockosaurOperations.mock[T]
 
   def mock[T](obj: T)(implicit tag: ClassTag[T]): T = MockosaurOperations.mock(obj)
 
@@ -13,6 +13,7 @@ package object mockosaur {
 
   def verifyAllCallsWereMadeTo(mocks: AnyRef*): Unit = MockosaurOperations.verifyAllCallsWereMadeTo(mocks)
 
+  def any[T](implicit tag: ClassTag[T]): T = MockosaurOperations.newWildcardValue[T]
 
   implicit class TheseAreUsedToSpecifyFunctionCallResults[T](val ref: T) extends AnyVal {
 

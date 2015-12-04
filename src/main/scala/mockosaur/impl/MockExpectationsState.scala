@@ -20,13 +20,24 @@ private[mockosaur] object MockExpectationsState {
   object MockCallResult {
     case class Result(functionResult: FunctionResult) extends MockCallResult
     case object ContinueChain extends MockCallResult
-    case object UnexpectedParams extends MockCallResult
+    case class UnexpectedParams(expectedCall: FunctionCall) extends MockCallResult
     case object UnexpectedCall extends MockCallResult
+  }
+
+  private sealed trait CallChainMatch
+  private object CallChainMatch {
+    case class Match(chain: FunctionCallChain) extends CallChainMatch
+    case object NoMatch extends CallChainMatch
+    case class ArgMismatch(expectedCall: FunctionCall) extends CallChainMatch
+    case object ChainPrefixMatch extends CallChainMatch
   }
 
   private def buildEmptyState() = mutable.WeakHashMap[Mock, IndividualMockState]().withDefaultValue(IndividualMockState.zero)
   private val globalStateRef: AtomicReference[mutable.Map[Mock, IndividualMockState]] = new AtomicReference(buildEmptyState())
   private def globalState: mutable.Map[Mock, IndividualMockState] = globalStateRef.get
+
+  // todo - convert to a weak identity collection
+  private val wildcardPlaceholders = mutable.ListBuffer[Any]()
 
   def appendRecordedCallForMock(mock: Mock, call: FunctionCall) = MockExpectationsState.synchronized {
     val oldState = globalState(mock)
@@ -42,40 +53,27 @@ private[mockosaur] object MockExpectationsState {
     val oldState = globalState(mock)
     val stateWithCall = oldState.copy(inProgressCallChain = oldState.inProgressCallChain :+ call)
 
-    ((stateWithCall.pendingExpectations.find(_.calls == stateWithCall.inProgressCallChain) match {
+    findCallChainMatch(stateWithCall.inProgressCallChain, stateWithCall.pendingExpectations) match {
+      case CallChainMatch.ChainPrefixMatch          => MockCallResult.ContinueChain
+      case CallChainMatch.ArgMismatch(expectedCall) => MockCallResult.UnexpectedParams(expectedCall)
+      case CallChainMatch.NoMatch                   => MockCallResult.UnexpectedCall
+      case CallChainMatch.Match(matchedChain)       =>
 
-      case Some(chain) => // if call chain matches an expectation
-
-        val newPending = stateWithCall.pendingExpectations.diff(Seq(chain))
-        val newInvoked = stateWithCall.invokedExpectations :+ chain
+        // move expectation from pending to invoked so it's not a candidate next time
+        val newPending = stateWithCall.pendingExpectations.diff(Seq(matchedChain))
+        val newInvoked = stateWithCall.invokedExpectations :+ matchedChain
         val newState = stateWithCall.copy(inProgressCallChain = Seq.empty,
                                           pendingExpectations = newPending,
                                           invokedExpectations = newInvoked)
 
-        MockCallResult.Result(chain.result) -> newState
-
-      case None =>
-
-        val callsMatchStartOfCallChain = stateWithCall.pendingExpectations.exists(_.calls.startsWith(stateWithCall.inProgressCallChain))
-
-        if (callsMatchStartOfCallChain) {
-          MockCallResult.ContinueChain -> stateWithCall
-        } else {
-          val methodMatchStartOfCallChain = stateWithCall.pendingExpectations.exists(_.calls.map(_.function).startsWith(stateWithCall.inProgressCallChain.map(_.function)))
-          val rejectionType =
-            if (methodMatchStartOfCallChain) {
-              MockCallResult.UnexpectedParams
-            } else {
-              MockCallResult.UnexpectedCall
-            }
-          rejectionType -> stateWithCall
-        }
-
-    }): (MockCallResult, IndividualMockState)) match {
-      case (result: MockCallResult, newState: IndividualMockState) =>
         globalState.update(mock, newState)
-        result
+
+        MockCallResult.Result(matchedChain.result)
     }
+  }
+
+  def addWildcardPlaceholder(wildcardPlaceholder: Any) = MockExpectationsState.synchronized {
+    wildcardPlaceholders += wildcardPlaceholder
   }
 
   def completeCallChain(mock: Mock, toReturn: Seq[FunctionResult.Return]) = MockExpectationsState.synchronized {
@@ -114,6 +112,27 @@ private[mockosaur] object MockExpectationsState {
       println(s"$mock - $state")
     }
     println("=================================================")
+  }
+
+  private def findCallChainMatch(needle: Seq[FunctionCall], haystack: Seq[FunctionCallChain]): CallChainMatch = {
+    // todo - next - has a placeholder and doesn't consult wildcard list
+    haystack.find(_.calls == needle) match {
+      case Some(chain) => CallChainMatch.Match(chain)
+      case None =>
+
+        if (haystack.exists(_.calls.startsWith(needle))) {
+          CallChainMatch.ChainPrefixMatch
+        } else {
+
+          val expectedCallWithArgMismatch: Option[FunctionCall] = ???
+          expectedCallWithArgMismatch match {
+            case Some(mismatch) => CallChainMatch.ArgMismatch(mismatch)
+            case None           => CallChainMatch.NoMatch
+          }
+
+        }
+
+    }
   }
 
 }

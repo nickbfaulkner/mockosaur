@@ -49,6 +49,8 @@ private[mockosaur] object MockosaurOperations {
     MockState.recordingThrow(FunctionResult.Throw(t))
   }
 
+  def newWildcardValue[T](implicit tag: ClassTag[T]): T = MockState.newWildcardValue(tag.runtimeClass.asInstanceOf[Class[T]])
+
   private def forceAnyToExpectedReturnType(value: Any, _expectedReturnType: Class[_]): AnyRef = {
     val expectedReturnType = primitiveToBoxedType(_expectedReturnType)
 

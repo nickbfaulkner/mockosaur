@@ -18,10 +18,10 @@ private[mockosaur] object MockState {
       zombie
     } else {
       MockExpectationsState.appendActualCallForMock(mock, call) match {
-        case Result(result)   => result
-        case ContinueChain    => zombie
-        case UnexpectedParams => throw MockosaurUnexpectedFunctionParamsException(call)
-        case UnexpectedCall   => throw MockosaurUnexpectedFunctionCallException(call)
+        case Result(result)                 => result
+        case ContinueChain                  => zombie
+        case UnexpectedParams(expectedCall) => throw MockosaurUnexpectedFunctionParamsException(call, expectedCall)
+        case UnexpectedCall                 => throw MockosaurUnexpectedFunctionCallException(call)
       }
     }
   }
@@ -63,6 +63,12 @@ private[mockosaur] object MockState {
         throw MockosaurUnmetExpectationException(unmet)
       }
     }
+  }
+
+  def newWildcardValue[T](ofType: Class[T]): T = {
+    val wildcardPlaceholder = MockBuilder.buildZombie(ofType)
+    MockExpectationsState.addWildcardPlaceholder(wildcardPlaceholder)
+    wildcardPlaceholder
   }
 
   // this is required because the tests explicitly leave mocks in a bad state
