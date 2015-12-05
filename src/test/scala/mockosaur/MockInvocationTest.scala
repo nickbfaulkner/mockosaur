@@ -129,7 +129,13 @@ class MockInvocationTest extends MockosaurTest {
       }
     }
 
-    "throw if wildcard type is not specified" in pending
+    "throw if wildcard type is not specified" in new Scope {
+      val theMock = mock[TheTestClass]
+
+      intercept[MockosaurWildcardTypeNotSpecifiedException] {
+        calling(theMock).theAnyValArgStringFunc(any, new Object(), 3, 4, AnInt(5)).returns("A String")
+      }
+    }
 
     "accept other mocks as param values" in new Scope {
       val theMock = mock[TheTestClass]

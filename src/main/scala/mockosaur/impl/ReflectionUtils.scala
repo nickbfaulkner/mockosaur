@@ -24,8 +24,6 @@ private[mockosaur] object ReflectionUtils {
   }
 
   def unwrapValueClass(value: Any): Try[AnyRef] = {
-    // even though we type checked, the return type does not match the expectation
-    // assuming it's a value class, let's get the underlying value
 
     val constructors = value.getClass.getConstructors
     if (constructors.length != 1) {

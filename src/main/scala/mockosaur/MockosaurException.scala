@@ -17,3 +17,4 @@ class MockosaurUsageException extends MockosaurException()
 case class MockosaurNoOngoingRecordException() extends MockosaurUsageException
 case class MockosaurRecordAlreadyOngoingException() extends MockosaurUsageException
 case class MockosaurReturnsRequiredException() extends MockosaurUsageException
+case class MockosaurWildcardTypeNotSpecifiedException() extends MockosaurUsageException

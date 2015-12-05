@@ -66,6 +66,9 @@ private[mockosaur] object MockState {
   }
 
   def newWildcardValue[T](ofType: Class[T]): T = {
+    if (ofType == classOf[Nothing]) {
+      throw new MockosaurWildcardTypeNotSpecifiedException()
+    }
     val wildcardPlaceholder = MockBuilder.buildZombie(ofType)
     MockExpectationsState.addWildcardPlaceholder(wildcardPlaceholder)
     wildcardPlaceholder
