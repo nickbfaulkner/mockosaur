@@ -4,7 +4,7 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 
 import mockosaur.MockInvocationTest.AnInt
-import mockosaur.impl.MockState
+import mockosaur.impl._
 
 object MockInvocationTest {
   final case class AnInt(theInt: Int) extends AnyVal

@@ -2,7 +2,7 @@ package mockosaur.impl
 
 import java.util.concurrent.atomic.AtomicReference
 
-import mockosaur.{FunctionCall, FunctionCallChain, FunctionResult, Mock}
+import mockosaur._
 
 import scala.collection.mutable
 
@@ -12,6 +12,9 @@ private[mockosaur] object MockExpectationsState {
                                  inProgressCallChain: Seq[FunctionCall],
                                  pendingExpectations: Seq[FunctionCallChain],
                                  invokedExpectations: Seq[FunctionCallChain])
+
+  private case class ArgumentMismatch(expected: FunctionCall, actual: FunctionCall)
+
   object IndividualMockState {
     val zero = IndividualMockState(Seq.empty, Seq.empty, Seq.empty, Seq.empty)
   }
@@ -20,7 +23,7 @@ private[mockosaur] object MockExpectationsState {
   object MockCallResult {
     case class Result(functionResult: FunctionResult) extends MockCallResult
     case object ContinueChain extends MockCallResult
-    case class UnexpectedParams(expectedCall: FunctionCall) extends MockCallResult
+    case class UnexpectedParams(expectedCall: FunctionCall, actualCall: FunctionCall) extends MockCallResult
     case object UnexpectedCall extends MockCallResult
   }
 
@@ -28,7 +31,7 @@ private[mockosaur] object MockExpectationsState {
   private object CallChainMatch {
     case class Match(chain: FunctionCallChain) extends CallChainMatch
     case object NoMatch extends CallChainMatch
-    case class ArgMismatch(expectedCall: FunctionCall) extends CallChainMatch
+    case class ArgMismatch(expectedCall: FunctionCall, actualCall: FunctionCall) extends CallChainMatch
     case object ChainPrefixMatch extends CallChainMatch
   }
 
@@ -40,8 +43,17 @@ private[mockosaur] object MockExpectationsState {
   private val wildcardPlaceholders = mutable.ListBuffer[Any]()
 
   def appendRecordedCallForMock(mock: Mock, call: FunctionCall) = MockExpectationsState.synchronized {
+
+    def swapForWildcard(arg: FunctionArg): FunctionArg = {
+      val isWildcard = wildcardPlaceholders.exists(_.asInstanceOf[AnyRef] eq arg.value.asInstanceOf[AnyRef])
+
+      if (isWildcard) FunctionWildcardArgument(arg.value)
+      else arg
+    }
+
     val oldState = globalState(mock)
-    val newState = oldState.copy(inProgressRecording = oldState.inProgressRecording :+ call)
+    val callWithWildcards = call.copy(args = call.args.map(swapForWildcard))
+    val newState = oldState.copy(inProgressRecording = oldState.inProgressRecording :+ callWithWildcards)
     globalState.update(mock, newState)
   }
 
@@ -54,9 +66,13 @@ private[mockosaur] object MockExpectationsState {
     val stateWithCall = oldState.copy(inProgressCallChain = oldState.inProgressCallChain :+ call)
 
     findCallChainMatch(stateWithCall.inProgressCallChain, stateWithCall.pendingExpectations) match {
+
       case CallChainMatch.ChainPrefixMatch          => MockCallResult.ContinueChain
-      case CallChainMatch.ArgMismatch(expectedCall) => MockCallResult.UnexpectedParams(expectedCall)
+
       case CallChainMatch.NoMatch                   => MockCallResult.UnexpectedCall
+
+      case mismatch: CallChainMatch.ArgMismatch     => MockCallResult.UnexpectedParams(expectedCall = mismatch.expectedCall,
+                                                                                       actualCall = mismatch.actualCall)
       case CallChainMatch.Match(matchedChain)       =>
 
         // move expectation from pending to invoked so it's not a candidate next time
@@ -115,22 +131,71 @@ private[mockosaur] object MockExpectationsState {
   }
 
   private def findCallChainMatch(needle: Seq[FunctionCall], haystack: Seq[FunctionCallChain]): CallChainMatch = {
-    // todo - next - has a placeholder and doesn't consult wildcard list
-    haystack.find(_.calls == needle) match {
+
+    haystack.find(h => consideringWildcards.isTotalMatch(needle, h.calls)) match {
       case Some(chain) => CallChainMatch.Match(chain)
       case None =>
 
-        if (haystack.exists(_.calls.startsWith(needle))) {
+        if (haystack.exists(h => consideringWildcards.isPrefixMatch(needle, h.calls))) {
           CallChainMatch.ChainPrefixMatch
         } else {
 
-          val expectedCallWithArgMismatch: Option[FunctionCall] = ???
-          expectedCallWithArgMismatch match {
-            case Some(mismatch) => CallChainMatch.ArgMismatch(mismatch)
+          consideringWildcards.findArgumentMismatch(needle, haystack.map(_.calls)) match {
+            case Some(mismatch) => CallChainMatch.ArgMismatch(expectedCall = mismatch.expected,
+                                                              actualCall   = mismatch.actual)
             case None           => CallChainMatch.NoMatch
           }
 
         }
+
+    }
+  }
+
+  private object consideringWildcards {
+
+    def isTotalMatch(needleSeq: Seq[FunctionCall], haystackSeq: Seq[FunctionCall]): Boolean = {
+      (needleSeq.size == haystackSeq.size) && isPrefixMatch(needleSeq, haystackSeq)
+    }
+
+    def isPrefixMatch(needleSeq: Seq[FunctionCall], haystackSeq: Seq[FunctionCall]): Boolean = {
+      if (needleSeq.size != haystackSeq.size) {
+        false
+      } else {
+        needleSeq.zip(haystackSeq) forall { case (needleCall, haystackCall) =>
+          this.isCallMatch(call = needleCall, expectedCall = haystackCall)
+        }
+      }
+    }
+
+    def findArgumentMismatch(needle: Seq[FunctionCall], haystack: Seq[Seq[FunctionCall]]): Option[ArgumentMismatch] = {
+
+      needle.headOption match {
+        case None => None
+        case Some(currentCall) =>
+
+          haystack.filter(chain => chain.headOption.exists(_.function == currentCall.function)) match {
+            case Nil => None
+            case haystackWithMethodMatch =>
+
+              val candiateCalls = haystackWithMethodMatch.flatMap(_.headOption.toSeq)
+              candiateCalls.find(candidateCall => !isCallMatch(currentCall, candidateCall)) match {
+                case Some(mismatch) => Some(ArgumentMismatch(expected = mismatch, actual = currentCall))
+                case None           => findArgumentMismatch(needle.tail, haystackWithMethodMatch.map(_.tail))
+              }
+
+          }
+      }
+    }
+
+    private def isCallMatch(call: FunctionCall, expectedCall: FunctionCall): Boolean = {
+
+      if ((call.function != expectedCall.function) || (call.args.size != expectedCall.args.size)) {
+        false
+      } else {
+        call.args.zip(expectedCall.args) forall { case (callArg, expectedArg) =>
+          expectedArg.isWildcard || (callArg == expectedArg)
+        }
+      }
 
     }
   }

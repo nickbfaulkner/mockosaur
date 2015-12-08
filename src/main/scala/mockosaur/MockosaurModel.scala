@@ -12,4 +12,13 @@ private[mockosaur] object FunctionResult {
   final case class Throw(toThrow: Throwable) extends FunctionResult
 }
 
-private[mockosaur] final case class FunctionArg(value: AnyRef)
+private[mockosaur] sealed trait FunctionArg {
+  val value: AnyRef
+  val isWildcard: Boolean
+}
+private[mockosaur] final case class FunctionArgument(value: AnyRef) extends FunctionArg {
+  override val isWildcard = false
+}
+private[mockosaur] final case class FunctionWildcardArgument(value: AnyRef) extends FunctionArg {
+  override val isWildcard = true
+}

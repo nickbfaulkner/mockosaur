@@ -18,10 +18,10 @@ private[mockosaur] object MockState {
       zombie
     } else {
       MockExpectationsState.appendActualCallForMock(mock, call) match {
-        case Result(result)                 => result
-        case ContinueChain                  => zombie
-        case UnexpectedParams(expectedCall) => throw MockosaurUnexpectedFunctionParamsException(call, expectedCall)
-        case UnexpectedCall                 => throw MockosaurUnexpectedFunctionCallException(call)
+        case Result(result)        => result
+        case ContinueChain         => zombie
+        case res: UnexpectedParams => throw MockosaurUnexpectedFunctionParamsException(called = res.actualCall, expected = res.expectedCall)
+        case UnexpectedCall        => throw MockosaurUnexpectedFunctionCallException(call)
       }
     }
   }

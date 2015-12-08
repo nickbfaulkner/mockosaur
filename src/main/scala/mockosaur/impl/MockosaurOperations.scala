@@ -14,7 +14,7 @@ private[mockosaur] object MockosaurOperations {
   def mock[T](implicit tag: ClassTag[T]): T = {
     MockBuilder.build(tag.runtimeClass.asInstanceOf[Class[T]], new MockFunctionHandler[T] {
       override def functionCall(mock: T, method: Method, args: Seq[AnyRef]): AnyRef = {
-        val result = MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArg.apply)))
+        val result = MockState.processFunctionCall(Mock(mock), FunctionCall(method, args.map(FunctionArgument.apply)))
         result match {
           case FunctionResult.Return(toReturn) => forceAnyToExpectedReturnType(toReturn, method.getReturnType)
           case FunctionResult.Throw(toThrow) => throw toThrow
