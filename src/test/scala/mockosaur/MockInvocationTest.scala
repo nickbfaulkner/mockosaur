@@ -108,6 +108,9 @@ class MockInvocationTest extends MockosaurTest {
 
       val two = new Object()
 
+      def aaa() = null.asInstanceOf[AnInt]
+
+      calling(theMock).theAnyValArgStringFunc(any[String], two, any[Int], 4, aaa()).returns("A String")
       calling(theMock).theAnyValArgStringFunc(any[String], two, any[Int], 4, any[AnInt]).returns("A String")
 
       theMock.theAnyValArgStringFunc("one", two, 3, 4, AnInt(5)) shouldBe "A String"
@@ -205,6 +208,9 @@ class MockInvocationTest extends MockosaurTest {
 
     "implicits" in pending
     "returning functions" in pending
+    "named parameters" in pending
+    "default parameters" in pending
+    "functions in super class" in pending
 
     "verify all calls were made to a mock" in new Scope {
       val theMock = mock[TheTestClass]
